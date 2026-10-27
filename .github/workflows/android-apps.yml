@@ -1,0 +1,48 @@
+name: Android apps
+
+on:
+  push:
+    paths:
+      - "android/**"
+      - ".github/workflows/android-apps.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Test and build APKs
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest --no-daemon
+
+      - name: Build debug APKs
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload Commentator APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: commentator-debug-apk
+          path: android/commentator/build/outputs/apk/debug/commentator-debug.apk
+          if-no-files-found: error
+
+      - name: Upload Bullshit Detector APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: bsdetector-debug-apk
+          path: android/bsdetector/build/outputs/apk/debug/bsdetector-debug.apk
+          if-no-files-found: error

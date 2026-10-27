@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="android:Theme.Material.Light.DarkActionBar" />
+    <color name="flash_red">#D50000</color>
+    <color name="muted">#757575</color>
+</resources>
