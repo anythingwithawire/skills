@@ -13,12 +13,17 @@
         android:inputType="textMultiLine|textCapSentences"
         android:maxLines="4" />
 
-    <CheckBox
-        android:id="@+id/consentCheck"
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/consent_label"
-        android:textSize="12sp" />
+        android:layout_marginTop="8dp"
+        android:text="@string/basis_label"
+        android:textStyle="bold" />
+
+    <RadioGroup
+        android:id="@+id/basisGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
     <Button
         android:id="@+id/toggleButton"

@@ -1,6 +1,6 @@
 # Commentator (Android)
 
-Listens to a conversation through the phone microphone, transcribes it with Android's built-in speech recogniser, and every few seconds sends the new part of the transcript to Claude. Claude's commentary appears on screen as cards, newest first:
+Listens to a conversation through the phone microphone, transcribes it with Android's on-device speech recogniser, and every few seconds sends the new part of the transcript to Claude. Claude's commentary appears on screen as cards, newest first:
 
 - **❓ Question**: something that should be asked or pinned down
 - **⚠️ Doubt**: a claim that looks shaky, unsupported, or inconsistent with what was said earlier
@@ -19,20 +19,36 @@ Each CI run signs with a fresh debug key, so installing a newer build over an ol
 
 1. Open the menu, choose **Settings**, and paste a Claude API key from the [Claude Console](https://platform.claude.com/). Usage is billed to that key.
 2. Grant microphone access when asked.
-3. Tick the consent box, type a context, and tap **Start listening**.
+3. Choose the basis for listening, type a context, and tap **Start listening**.
 
-Settings also hold the model (default `claude-opus-5-5`), the commentary interval (default 25 seconds, minimum 10), the default jurisdiction (default Western Australia), and whether to prefer on-device recognition.
+Settings also hold the model (default `claude-opus-5-5`), the commentary interval (default 25 seconds, minimum 10), the default jurisdiction (default Western Australia), the recognition language (default `en-AU`), and ephemeral mode (on by default).
+
+## Basis for listening
+
+Every session starts with a choice of basis, which clears when the session stops and is stamped at the top of the session log:
+
+- **In court, with the court's leave.** Claude is told to help the way a McKenzie friend does: questions to put, points to note, errors to raise, and never interrupting the court.
+- **Every principal party has consented.** Surveillance Devices Act 1998 (WA) s 5(3)(c) and s 9(2)(a)(ii).
+- **Reasonably necessary to protect my lawful interests.** s 5(3)(d) and s 9(2)(a)(vi). A confirmation dialog explains that this exception is narrow and that the burden of justifying it is yours.
+
+## Ephemeral mode
+
+On by default. Each piece of transcript is held only until the next send (at most one commentary interval), then discarded. Claude gets the new speech plus its own earlier comments, which act as its notes of the conversation, and never sees earlier speech again. The session log, and so **Share session**, holds comments only. If a request fails in this mode, that speech is gone and the error card says so.
+
+With ephemeral mode off, the app keeps the whole transcript as one growing conversation with Claude (cheaper per request through prompt caching, and Claude sees everything), and the session log includes the transcript.
+
+Either way, each piece of speech that Claude receives is a verbatim transcript. Tokenising does not change that: tokens decode back to the exact text.
 
 ## Privacy and the law
 
-Under the Surveillance Devices Act 1998 (WA) s 5(1), using a listening device to record, monitor or listen to a private conversation you are not a party to, or to record one you are a party to, is an offence unless an exception applies. The cleanest exception is s 5(3)(c): every principal party consents. The app will not start until you tick the consent box, and the box clears after every session.
+Under the Surveillance Devices Act 1998 (WA) s 5(1), using a listening device to record, monitor or listen to a private conversation you are not a party to, or to record one you are a party to, is an offence unless an exception applies. The cleanest exception is s 5(3)(c): every principal party consents. Sending the transcript to the API is arguably also communicating a record of the conversation under s 9(1), which has its own exceptions in s 9(2). The app will not start until you choose a basis (see above). No authority has been found on whether live speech-to-text with no saved audio is a "record" under the Act, so treat that question as open.
 
 What leaves the phone:
 
-- **Audio**: with on-device recognition (Android 13+ with the en-AU pack installed), audio stays on the phone. Otherwise the system recognition service may send audio to its provider (usually Google).
-- **Transcript text** goes to the Anthropic API for commentary.
+- **Audio**: never. The app uses only Android's on-device recogniser (Android 13 or later, with the recognition language pack installed). If the phone cannot recognise on-device, the app refuses to listen instead of falling back to a cloud recogniser.
+- **Transcript text** goes to the Anthropic API for commentary, verbatim, a chunk at a time.
 
-Nothing is written to storage. The transcript and comments live in memory until you clear the session or close the app; **Share session** hands them to another app only when you ask.
+Nothing is written to storage. The session log lives in memory until you clear the session or close the app; **Share session** hands it to another app only when you ask.
 
 ## Known limits
 

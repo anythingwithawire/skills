@@ -11,7 +11,11 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 
 /**
- * Continuous speech-to-text on top of Android's SpeechRecognizer.
+ * Continuous on-device speech-to-text on top of Android's SpeechRecognizer.
+ *
+ * Only the on-device recogniser is used, so audio never leaves the phone. If the
+ * phone cannot recognise on-device, the listener refuses to start rather than
+ * falling back to a cloud recognition service.
  *
  * SpeechRecognizer stops after each utterance, so every result or benign
  * error restarts it. Errors that will not clear by themselves go to onFatal
@@ -20,7 +24,7 @@ import android.speech.SpeechRecognizer
  */
 class Listener(
     private val context: Context,
-    private val preferOnDevice: Boolean,
+    private val language: String,
     private val onPartial: (String) -> Unit,
     private val onFinal: (String) -> Unit,
     private val onStatus: (String) -> Unit,
@@ -30,21 +34,18 @@ class Listener(
     private val handler = Handler(Looper.getMainLooper())
     private var recognizer: SpeechRecognizer? = null
     private var active = false
-    private var onDevice = false
 
     fun start() {
-        if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-            onFatal("No speech recognition service is installed on this phone.")
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            onFatal("On-device speech recognition needs Android 13 or later. This phone runs Android ${Build.VERSION.RELEASE}, so the app will not listen.")
             return
         }
-        onDevice = preferOnDevice &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
-        val created = if (onDevice) {
-            SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
-        } else {
-            SpeechRecognizer.createSpeechRecognizer(context)
+        if (!SpeechRecognizer.isOnDeviceRecognitionAvailable(context)) {
+            onFatal("This phone has no on-device speech recognition, so the app will not listen. " +
+                "Installing or updating Speech Recognition and Synthesis by Google may add it.")
+            return
         }
+        val created = SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
         created.setRecognitionListener(this)
         recognizer = created
         active = true
@@ -62,9 +63,8 @@ class Listener(
         if (!active) return
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-AU")
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, language)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, preferOnDevice)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
             putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
         }
@@ -77,7 +77,7 @@ class Listener(
     }
 
     override fun onReadyForSpeech(params: Bundle?) {
-        onStatus(if (onDevice) "Listening (on-device recognition)" else "Listening (system recognition service)")
+        onStatus("Listening (on-device)")
     }
 
     override fun onPartialResults(partialResults: Bundle?) {
@@ -104,13 +104,6 @@ class Listener(
                 restartAfter(500)
             }
 
-            SpeechRecognizer.ERROR_NETWORK,
-            SpeechRecognizer.ERROR_NETWORK_TIMEOUT,
-            SpeechRecognizer.ERROR_SERVER -> {
-                onStatus("Speech service network error (code $error), restarting in 3 s")
-                restartAfter(3000)
-            }
-
             SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> {
                 stop()
                 onFatal("Microphone permission was refused.")
@@ -118,9 +111,9 @@ class Listener(
 
             else -> {
                 stop()
-                onFatal("Speech recognition failed with error code $error. " +
-                    "Codes 12 and 13 mean the en-AU language pack is not installed for on-device recognition: " +
-                    "turn off on-device recognition in Settings or install the pack.")
+                onFatal("On-device speech recognition failed with error code $error. " +
+                    "Codes 12 and 13 mean the $language language pack is not installed for on-device recognition: " +
+                    "install it in the phone's language settings, or pick an installed language in Settings.")
             }
         }
     }

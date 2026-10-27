@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Commentator</string>
     <string name="context_hint">Context, e.g. \"Family law property settlement discussion, WA\" or \"SIL verification meeting, IEC 61511\"</string>
-    <string name="consent_label">All principal parties have consented to this conversation being transcribed and analysed (Surveillance Devices Act 1998 (WA) s 5(3)(c))</string>
+    <string name="basis_label">Basis for listening (Surveillance Devices Act 1998 (WA)), chosen each session</string>
     <string name="start">Start listening</string>
     <string name="stop">Stop</string>
     <string name="settings">Settings</string>
@@ -12,5 +12,6 @@
     <string name="model">Model</string>
     <string name="interval">Commentary interval (seconds)</string>
     <string name="jurisdiction">Default jurisdiction and locale</string>
-    <string name="prefer_on_device">Prefer on-device speech recognition (audio stays on the phone)</string>
+    <string name="language">Recognition language (must be installed for on-device recognition)</string>
+    <string name="ephemeral">Ephemeral mode: discard each piece of transcript once sent; keep and share comments only (recommended)</string>
 </resources>

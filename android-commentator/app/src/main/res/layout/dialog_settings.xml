@@ -53,10 +53,21 @@
             android:layout_height="wrap_content"
             android:inputType="text" />
 
-        <CheckBox
-            android:id="@+id/onDeviceCheck"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/language" />
+
+        <EditText
+            android:id="@+id/languageInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/prefer_on_device" />
+            android:inputType="text" />
+
+        <CheckBox
+            android:id="@+id/ephemeralCheck"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/ephemeral" />
     </LinearLayout>
 </ScrollView>
